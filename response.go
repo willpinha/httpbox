@@ -1,13 +1,11 @@
 package httpbox
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/xml"
+	"io"
 	"net/http"
-)
-
-const (
-	ContentTypeTextPlain = "text/plain; charset=utf-8"
-	ContentTypeJSON      = "application/json; charset=utf-8"
 )
 
 func WriteJSON(w http.ResponseWriter, code int, data any) error {
@@ -15,7 +13,33 @@ func WriteJSON(w http.ResponseWriter, code int, data any) error {
 		return err
 	}
 
-	w.Header().Set("Content-Type", ContentTypeJSON)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+
+	return nil
+}
+
+func WriteXML(w http.ResponseWriter, code int, data any) error {
+	if err := xml.NewEncoder(w).Encode(data); err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/xml")
+	w.WriteHeader(code)
+
+	return nil
+}
+
+func WriteBytes(w http.ResponseWriter, code int, contentType string, data []byte) error {
+	return WriteFromReader(w, bytes.NewReader(data), code, contentType)
+}
+
+func WriteFromReader(w http.ResponseWriter, r io.Reader, code int, contentType string) error {
+	if _, err := io.Copy(w, r); err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(code)
 
 	return nil
