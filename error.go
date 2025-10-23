@@ -2,10 +2,10 @@ package httpbox
 
 type Error struct {
 	Code    int    `json:"code"`
-	Message string `json:"message,omitempty"`
+	Message string `json:"message"`
 	Details any    `json:"details,omitempty"`
-	err     error  `json:"-"`
-	log     bool   `json:"-"`
+	Err     error  `json:"-"`
+	Log     bool   `json:"-"`
 }
 
 type ErrorOption func(*Error)
@@ -15,13 +15,14 @@ func (e *Error) Error() string {
 }
 
 func (e *Error) ShouldLog() bool {
-	return e.log
+	return e.Log
 }
 
-func NewError(code int, opts ...ErrorOption) *Error {
+func NewError(code int, message string, opts ...ErrorOption) *Error {
 	err := &Error{
-		Code: code,
-		log:  false,
+		Code:    code,
+		Message: message,
+		Log:     false,
 	}
 
 	for _, opt := range opts {
@@ -29,12 +30,6 @@ func NewError(code int, opts ...ErrorOption) *Error {
 	}
 
 	return err
-}
-
-func WithMessage(message string) ErrorOption {
-	return func(err *Error) {
-		err.Message = message
-	}
 }
 
 func WithDetails(details any) ErrorOption {
@@ -45,12 +40,12 @@ func WithDetails(details any) ErrorOption {
 
 func WithInternalError(internalErr error) ErrorOption {
 	return func(err *Error) {
-		err.err = internalErr
+		err.Err = internalErr
 	}
 }
 
 func WithLog() ErrorOption {
 	return func(err *Error) {
-		err.log = true
+		err.Log = true
 	}
 }
