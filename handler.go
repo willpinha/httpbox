@@ -31,7 +31,7 @@ func handleError(w http.ResponseWriter, err error) {
 
 	// The only possible error is if the Details field contains non-serializable data
 	if err := WriteJSON(w, httpErr.Code, httpErr); err != nil {
-		failedMsg := "Failed to serialize error details"
+		failedMsg := "failed to serialize error details"
 
 		httpErr.Details = failedMsg
 
@@ -41,16 +41,13 @@ func handleError(w http.ResponseWriter, err error) {
 		WriteJSON(w, httpErr.Code, httpErr)
 	}
 
-	if httpErr.ShouldLog() {
+	if httpErr.Log {
 		slog.Error(httpErr.Message, "code", httpErr.Code, "details", httpErr.Details, "error", httpErr.Err)
 	}
 }
 
 func (h Handler) WithMiddlewares(middlewares ...Middleware) Handler {
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		h = middlewares[i](h)
-	}
-	return h
+	return applyMiddlewares(h, middlewares...)
 }
 
 func AdaptHandler(h http.Handler) Handler {

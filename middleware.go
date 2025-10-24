@@ -4,6 +4,13 @@ import "net/http"
 
 type Middleware func(Handler) Handler
 
+func applyMiddlewares(h Handler, middlewares ...Middleware) Handler {
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		h = middlewares[i](h)
+	}
+	return h
+}
+
 func HelloWorld() Handler {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		return nil

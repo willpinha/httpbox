@@ -14,10 +14,6 @@ func (e *Error) Error() string {
 	return e.Message
 }
 
-func (e *Error) ShouldLog() bool {
-	return e.Log
-}
-
 func NewError(code int, message string, opts ...ErrorOption) *Error {
 	err := &Error{
 		Code:    code,
