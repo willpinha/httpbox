@@ -1,6 +1,9 @@
 package httpbox
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
 
 type Middleware func(Handler) Handler
 
@@ -11,30 +14,48 @@ func applyMiddlewares(h Handler, middlewares ...Middleware) Handler {
 	return h
 }
 
-func HelloWorld() Handler {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		return nil
-	}
+type accessResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+	bodySize   int
+}
+
+func newAccessResponseWriter(w http.ResponseWriter) *accessResponseWriter {
+	return &accessResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+}
+
+func (arw *accessResponseWriter) WriteHeader(statusCode int) {
+	arw.statusCode = statusCode
+	arw.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (arw *accessResponseWriter) Write(b []byte) (int, error) {
+	size, err := arw.ResponseWriter.Write(b)
+	arw.bodySize += size
+	return size, err
 }
 
 func AccessLogMiddleware() Middleware {
 	return func(h Handler) Handler {
-		return nil
+		return func(w http.ResponseWriter, r *http.Request) error {
+			arw := newAccessResponseWriter(w)
+
+			err := h(arw, r)
+
+			reqGroup := slog.Group("req",
+				slog.String("method", r.Method),
+				slog.String("url", r.URL.String()),
+				slog.String("remote_addr", r.RemoteAddr),
+			)
+
+			resGroup := slog.Group("res",
+				slog.Int("status", arw.statusCode),
+				slog.Int("body_size", arw.bodySize),
+			)
+
+			slog.Info("Access", reqGroup, resGroup)
+
+			return err
+		}
 	}
-}
-
-func X() {
-	mux := http.NewServeMux()
-
-	mux.Handle("GET /hello-world", HelloWorld())
-	mux.Handle("POST /hello-world", HelloWorld())
-	mux.Handle("PUT /hello-world", HelloWorld())
-	mux.Handle("PATCH /hello-world", HelloWorld())
-	mux.Handle("DELETE /hello-world", HelloWorld())
-
-	handler := AdaptHandler(mux).WithMiddlewares(
-		AccessLogMiddleware(),
-	)
-
-	http.ListenAndServe(":8080", handler)
 }
