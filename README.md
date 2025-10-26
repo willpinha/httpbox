@@ -2,7 +2,7 @@
 
 > Lightweight HTTP library compatible with net/http
 
-[Philosophy]() ⋅ [Documentation]() ⋅ [License]()
+[Documentation]() ⋅ [License]()
 
 ## About
 
