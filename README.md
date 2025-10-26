@@ -7,3 +7,7 @@
 ## About
 
 ## Philosophy
+
+## Documentation
+
+## License
